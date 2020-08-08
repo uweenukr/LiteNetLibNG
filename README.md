@@ -1,6 +1,6 @@
-# LiteNetLibMirror
+# LiteNetLibMirrorNG
 
-[LiteNetLib](https://github.com/RevenantX/LiteNetLib) Transport for [Mirror](https://github.com/vis2k/Mirror)
+[LiteNetLib](https://github.com/RevenantX/LiteNetLib) Transport for [MirrorNG](https://github.com/MirrorNG/MirrorNG)
 
 
 LiteNetLib code from this commit https://github.com/RevenantX/LiteNetLib/tree/v0.9.3.1
@@ -14,4 +14,4 @@ LiteNetLib code from this commit https://github.com/RevenantX/LiteNetLib/tree/v0
 
 ## Bugs?
 
-Please report any bugs or issues [Here](https://github.com/MirrorNetworking/LiteNetLibTransport/issues)
+Please report any bugs or issues [Here](https://github.com/uweenukr/LiteNetLibTransportNG/issues)

@@ -77,6 +77,7 @@ namespace LiteNetLibMirror
                     if (client == null)
                         return false;
 
+                    buffer.SetLength(0);
                     buffer.Write(newData.Array, 0, newData.Array.Length);
                     //Empty the queue
                     newData = new ArraySegment<byte>();
@@ -89,6 +90,7 @@ namespace LiteNetLibMirror
                     if (server == null)
                         return false;
 
+                    buffer.SetLength(0);
                     buffer.Write(newData.Array, 0, newData.Array.Length);
                     //Empty the queue
                     newData = new ArraySegment<byte>();

@@ -122,7 +122,7 @@ namespace LiteNetLibMirror
 
         public Task SendAsync(ArraySegment<byte> data)
         {
-            if (client != null)
+            if (client != null && client.Connected)
             {
                 client.Send(0, data);
             }

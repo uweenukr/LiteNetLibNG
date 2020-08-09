@@ -25,7 +25,7 @@ namespace LiteNetLibMirror
         Server server;
         List<int> newConnections = new List<int>();
 
-        public override IEnumerable<string> Scheme => new[] { "enet" };
+        public override IEnumerable<string> Scheme => new[] { "litenet" };
 
         public override bool Supported => Application.platform != RuntimePlatform.WebGLPlayer;
 

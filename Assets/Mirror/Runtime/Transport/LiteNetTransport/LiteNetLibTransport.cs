@@ -71,7 +71,10 @@ namespace LiteNetLibMirror
         {
             try
             {
-                await WaitFor(() => newConnections.Count > 0);
+                await WaitFor(() => server == null || newConnections.Count > 0);
+                if (server == null)
+                    return null;
+
                 LiteNetConnection conn = new LiteNetConnection(server, newConnections[0]);
                 newConnections.RemoveAt(0);
                 return conn;

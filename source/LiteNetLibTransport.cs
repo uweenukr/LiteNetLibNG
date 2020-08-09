@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using LiteNetLib;
-using LiteNetLibMirror;
-
+using System.Threading.Tasks;
+using Mirror;
 using UnityEngine;
 
-namespace Mirror
+namespace LiteNetLibMirror
 {
     public class LiteNetLibTransport : Transport
     {

@@ -82,8 +82,8 @@ namespace LiteNetLibMirror
         {
             try
             {
-                //Wait for new data to land in the queue
-                await WaitFor(() => newData.Count > 0 || client == null);
+                //Wait for connected client to have data in queue. Early return if null or not connected
+                await WaitFor(() => client == null || client.Connected && newData.Count > 0);
                 if (client == null)
                     return false;
 
@@ -103,8 +103,8 @@ namespace LiteNetLibMirror
         {
             try
             {
-                //Wait for new data to land in the queue
-                await WaitFor(() => newData.Count > 0 || server == null);
+                //Wait for new data to land in the queue. Early return if null or not connected
+                await WaitFor(() => server == null || newData.Count > 0);
                 if (server == null)
                     return false;
 

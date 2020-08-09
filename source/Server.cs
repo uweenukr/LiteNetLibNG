@@ -143,7 +143,7 @@ namespace LiteNetLibMirror
             {
                 foreach (int connectionId in connectionIds)
                 {
-                    SendOne(connectionId, channelId, segment);
+                    Send(connectionId, channelId, segment);
                 }
                 return true;
             }
@@ -154,7 +154,7 @@ namespace LiteNetLibMirror
             }
         }
 
-        private void SendOne(int connectionId, int channelId, ArraySegment<byte> segment)
+        public void Send(int connectionId, int channelId, ArraySegment<byte> segment)
         {
             if (connections.TryGetValue(connectionId, out NetPeer peer))
             {

@@ -23,50 +23,72 @@ namespace LiteNetLibMirror
         /// Active Server, null is no Server is active
         /// </summary>
         Server server;
+        List<int> newConnections = new List<int>();
 
-        /// <summary>
-        /// Client message recieved while Transport was disabled
-        /// </summary>
-        readonly Queue<ClientDataMessage> clientDisabledQueue = new Queue<ClientDataMessage>();
+        public override IEnumerable<string> Scheme => new[] { "enet" };
 
-        /// <summary>
-        /// Server message recieved while Transport was disabled
-        /// </summary>
-        readonly Queue<ServerDataMessage> serverDisabledQueue = new Queue<ServerDataMessage>();
-        /// <summary>
-        /// If messages were added to DisabledQueues
-        /// </summary>
-        bool checkMessageQueues;
+        public override bool Supported => Application.platform != RuntimePlatform.WebGLPlayer;
 
-        void Awake()
+        public override Task ListenAsync()
         {
-            logger.Log("LiteNetLibTransport initialized!");
+            if (server != null)
+            {
+                logger.LogWarning("Can't start server as one was already active");
+                return null;
+            }
+
+            server = new Server(port, updateTime, disconnectTimeout, logger);
+            server.onConnected += OnNewConnection;
+            server.Start();
+            return Task.CompletedTask;
         }
 
-        public override void Shutdown()
+        public override void Disconnect()
         {
             logger.Log("LiteNetLibTransport Shutdown");
             client?.Disconnect();
+            client = null;
             server?.Stop();
+            server = null;
         }
 
-        public override bool Available()
+        public async override Task<IConnection> ConnectAsync(Uri uri)
         {
-            // all except WebGL
-            return Application.platform != RuntimePlatform.WebGLPlayer;
+            if (client != null)
+            {
+                logger.LogWarning("Can't start client as one was already connected");
+                return null;
+            }
+
+            client = new Client(port, updateTime, disconnectTimeout, logger);
+
+            client.Connect(uri.Host);
+            await Task.CompletedTask;
+            return new LiteNetConnection(client);
         }
 
-        public override int GetMaxPacketSize(int channelId = 0)
+        public async override Task<IConnection> AcceptAsync()
         {
-            // LiteNetLib NetPeer construct calls SetMTU(0), which sets it to
-            // NetConstants.PossibleMtu[0] which is 576-68.
-            // (bigger values will cause TooBigPacketException even on loopback)
-            //
-            // see also: https://github.com/RevenantX/LiteNetLib/issues/388
-            return NetConstants.PossibleMtu[0];
+            try
+            {
+                await WaitFor(() => newConnections.Count > 0);
+                LiteNetConnection conn = new LiteNetConnection(server, newConnections[0]);
+                newConnections.RemoveAt(0);
+                return conn;
+            }
+            catch (ObjectDisposedException)
+            {
+                // expected,  the connection was closed
+                return null;
+            }
         }
 
-        private void LateUpdate()
+        void OnNewConnection(int id)
+        {
+            newConnections.Add(id);
+        }
+
+        void LateUpdate()
         {
             if (client != null)
             {
@@ -76,192 +98,23 @@ namespace LiteNetLibMirror
             {
                 server.OnUpdate();
             }
-
-            if (checkMessageQueues)
-            {
-                while (clientDisabledQueue.Count > 0)
-                {
-                    ClientDataMessage data = clientDisabledQueue.Dequeue();
-                    OnClientDataReceived.Invoke(data.data, data.channel);
-                }
-                while (serverDisabledQueue.Count > 0)
-                {
-                    ServerDataMessage data = serverDisabledQueue.Dequeue();
-                    OnServerDataReceived.Invoke(data.clientId, data.data, data.channel);
-                }
-
-                checkMessageQueues = false;
-            }
         }
 
-        public override string ToString()
+        public bool ClientConnected() => client != null && client.Connected;
+
+        public bool ServerActive() => server != null;
+
+        public override IEnumerable<Uri> ServerUri()
         {
-            if (server != null)
-            {
-                // printing server.listener.LocalEndpoint causes an Exception
-                // in UWP + Unity 2019:
-                //   Exception thrown at 0x00007FF9755DA388 in UWF.exe:
-                //   Microsoft C++ exception: Il2CppExceptionWrapper at memory
-                //   location 0x000000E15A0FCDD0. SocketException: An address
-                //   incompatible with the requested protocol was used at
-                //   System.Net.Sockets.Socket.get_LocalEndPoint ()
-                // so let's use the regular port instead.
-                return "TeleLiteNetLibpathy Server port: " + port;
-            }
-            else if (client != null)
-            {
-                if (client.Connected)
-                {
-                    return "LiteNetLib Client ip: " + client.RemoteEndPoint;
-                }
-                else
-                {
-                    return "LiteNetLib Connecting...";
-                }
-            }
-            return "LiteNetLib (inactive/disconnected)";
+            return new[] { server?.GetUri() };
         }
 
-        #region CLIENT
-        public override bool ClientConnected() => client != null && client.Connected;
-
-        public override void ClientConnect(string address)
+        public static async Task WaitFor(Func<bool> predicate)
         {
-            if (client != null)
+            while (!predicate())
             {
-                logger.LogWarning("Can't start client as one was already connected");
-                return;
-            }
-
-            client = new Client(port, updateTime, disconnectTimeout, logger);
-
-            client.onConnected += OnClientConnected.Invoke;
-            client.onData += Client_onData;
-            client.onDisconnected += OnClientDisconnected.Invoke;
-
-            client.Connect(address);
-        }
-
-        private void Client_onData(ArraySegment<byte> data, int channel)
-        {
-            if (enabled)
-            {
-                OnClientDataReceived.Invoke(data, channel);
-            }
-            else
-            {
-                clientDisabledQueue.Enqueue(new ClientDataMessage(data, channel));
-                checkMessageQueues = true;
+                await Task.Delay(1);
             }
         }
-
-        public override void ClientDisconnect()
-        {
-            if (client != null)
-            {
-                // remove events before calling disconnect so stop loops within mirror
-                client.onConnected -= OnClientConnected.Invoke;
-                client.onData -= OnClientDataReceived.Invoke;
-                client.onDisconnected -= OnClientDisconnected.Invoke;
-
-                client.Disconnect();
-                client = null;
-            }
-        }
-
-        public override bool ClientSend(int channelId, ArraySegment<byte> segment)
-        {
-            if (client == null || !client.Connected)
-            {
-                logger.LogWarning("Can't send when client is not connected");
-                return false;
-            }
-            return client.Send(channelId, segment);
-        }
-        #endregion
-
-
-        #region SERVER
-        public override bool ServerActive() => server != null;
-
-        public override void ServerStart()
-        {
-            if (server != null)
-            {
-                logger.LogWarning("Can't start server as one was already active");
-                return;
-            }
-
-            server = new Server(port, updateTime, disconnectTimeout, logger);
-
-            server.onConnected += OnServerConnected.Invoke;
-            server.onData += Server_onData;
-            server.onDisconnected += OnServerDisconnected.Invoke;
-
-            server.Start();
-        }
-
-        private void Server_onData(int clientId, ArraySegment<byte> data, int channel)
-        {
-            if (enabled)
-            {
-                OnServerDataReceived.Invoke(clientId, data, channel);
-            }
-            else
-            {
-                serverDisabledQueue.Enqueue(new ServerDataMessage(clientId, data, channel));
-                checkMessageQueues = true;
-            }
-        }
-
-        public override void ServerStop()
-        {
-            if (server != null)
-            {
-                server.onConnected -= OnServerConnected.Invoke;
-                server.onData -= OnServerDataReceived.Invoke;
-                server.onDisconnected -= OnServerDisconnected.Invoke;
-
-                server.Stop();
-                server = null;
-            }
-            else
-            {
-                logger.LogWarning("Can't stop server as no server was active");
-            }
-        }
-
-        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment)
-        {
-            if (server == null)
-            {
-                logger.LogWarning("Can't send when Server is not active");
-                return false;
-            }
-
-            return server.Send(connectionIds, channelId, segment);
-        }
-
-        public override bool ServerDisconnect(int connectionId)
-        {
-            if (server == null)
-            {
-                logger.LogWarning("Can't disconnect when Server is not active");
-                return false;
-            }
-
-            return server.Disconnect(connectionId);
-        }
-
-        public override string ServerGetClientAddress(int connectionId)
-        {
-            return server?.GetClientAddress(connectionId);
-        }
-
-        public override Uri ServerUri()
-        {
-            return server?.GetUri();
-        }
-        #endregion
     }
 }

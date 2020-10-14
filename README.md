@@ -1,4 +1,4 @@
-# LiteNetLibMirrorNG
+# LiteNetLibNG
 
 [LiteNetLib](https://github.com/RevenantX/LiteNetLib) Transport for [MirrorNG](https://github.com/MirrorNG/MirrorNG)
 
@@ -14,4 +14,4 @@ LiteNetLib code from this commit https://github.com/RevenantX/LiteNetLib/tree/v0
 
 ## Bugs?
 
-Please report any bugs or issues [Here](https://github.com/uweenukr/LiteNetLibTransportNG/issues)
+Please report any bugs or issues [Here](https://github.com/uweenukr/LiteNetLibNG/issues)

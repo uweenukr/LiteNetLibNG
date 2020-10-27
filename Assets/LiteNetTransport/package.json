@@ -1,0 +1,16 @@
+{
+    "name": "com.litenetlibmirror",
+    "displayName": "MirrorNG LiteNetLib",
+    "version": "0.0.1",
+    "unity": "2020.1",
+    "description": "UDP transport for MirrorNG",
+    "author": "MirrorNG",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/uweenukr/LiteNetLibNG.git"
+    },
+    "dependencies": {
+        "com.cysharp.unitask": "2.0.36",
+        "com.mirrorng.mirrorng": "54.1.1"
+    }
+}

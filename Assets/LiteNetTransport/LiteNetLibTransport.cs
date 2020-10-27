@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Mirror;
 using UnityEngine;
 
@@ -29,18 +30,18 @@ namespace LiteNetLibMirror
 
         public override bool Supported => Application.platform != RuntimePlatform.WebGLPlayer;
 
-        public override Task ListenAsync()
+        public override UniTask ListenAsync()
         {
             if (server != null)
             {
                 logger.LogWarning("Can't start server as one was already active");
-                return null;
+                return UniTask.CompletedTask;
             }
 
             server = new Server(port, updateTime, disconnectTimeout, logger);
             server.onConnected += OnNewConnection;
             server.Start();
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
         public override void Disconnect()
@@ -52,7 +53,7 @@ namespace LiteNetLibMirror
             server = null;
         }
 
-        public async override Task<IConnection> ConnectAsync(Uri uri)
+        public async override UniTask<IConnection> ConnectAsync(Uri uri)
         {
             if (client != null)
             {
@@ -67,7 +68,7 @@ namespace LiteNetLibMirror
             return new LiteNetConnection(client);
         }
 
-        public async override Task<IConnection> AcceptAsync()
+        public async override UniTask<IConnection> AcceptAsync()
         {
             try
             {

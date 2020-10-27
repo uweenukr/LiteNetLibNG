@@ -17,9 +17,9 @@ namespace LiteNetLibMirror
         {
             switch (channel)
             {
-                case Channels.DefaultReliable:
+                case Channel.Reliable:
                     return DeliveryMethod.ReliableOrdered;
-                case Channels.DefaultUnreliable:
+                case Channel.Unreliable:
                     return DeliveryMethod.Unreliable;
                 default:
                     throw new ArgumentException("Unexpected channel: " + channel);
@@ -31,9 +31,9 @@ namespace LiteNetLibMirror
             switch (channel)
             {
                 case DeliveryMethod.ReliableOrdered:
-                    return Channels.DefaultReliable;
+                    return Channel.Reliable;
                 case DeliveryMethod.Unreliable:
-                    return Channels.DefaultUnreliable;
+                    return Channel.Unreliable;
                 default:
                     throw new ArgumentException("Unexpected channel: " + channel);
             }

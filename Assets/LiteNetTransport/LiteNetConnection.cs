@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Mirror;
 
 namespace LiteNetLibMirror
@@ -65,20 +66,23 @@ namespace LiteNetLibMirror
             newData.Add(data);
         }
 
-        public async Task<bool> ReceiveAsync(MemoryStream buffer)
+        public async UniTask<int> ReceiveAsync(MemoryStream buffer)
         {
             if (client != null)
             {
-                return await ClientReceive(buffer);
+                await ClientReceive(buffer);
+                return Mirror.Channel.Reliable;
             }
             if (server != null)
             {
-                return await ServerReceive(buffer);
+                await ServerReceive(buffer);
+                return Mirror.Channel.Reliable;
             }
-            return await Task.FromResult(false);
+            await UniTask.FromResult(false);
+            return Mirror.Channel.Reliable;
         }
 
-        async Task<bool> ClientReceive(MemoryStream buffer)
+        async UniTask<bool> ClientReceive(MemoryStream buffer)
         {
             try
             {
@@ -99,7 +103,7 @@ namespace LiteNetLibMirror
             }
         }
 
-        async Task<bool> ServerReceive(MemoryStream buffer)
+        async UniTask<bool> ServerReceive(MemoryStream buffer)
         {
             try
             {
@@ -120,7 +124,7 @@ namespace LiteNetLibMirror
             }
         }
 
-        public Task SendAsync(ArraySegment<byte> data)
+        public UniTask SendAsync(ArraySegment<byte> data, int channel = Mirror.Channel.Reliable)
         {
             if (client != null && client.Connected)
             {
@@ -128,16 +132,16 @@ namespace LiteNetLibMirror
             }
             if (server != null)
             {
-                server.Send(connectionId, 0, data);
+                server.Send(connectionId, channel, data);
             }
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
-        public static async Task WaitFor(Func<bool> predicate)
+        public static async UniTask WaitFor(Func<bool> predicate)
         {
             while (!predicate())
             {
-                await Task.Delay(1);
+                await UniTask.Delay(1);
             }
         }
     }
